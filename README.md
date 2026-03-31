@@ -1,4 +1,4 @@
-# 🔬 GSoC 2026 — ML4SCI E2E | Task 1: Electron vs Photon Classification
+# 🔬 GSoC 2026 — ML4SCI E2E | Sparse Neural Network Pipeline
 
 **Organization:** [ML4SCI](https://ml4sci.org/)  
 **Project:** Sparse Neural Network Pipeline for Particle Collision Event Classification (E2E)  
@@ -6,7 +6,20 @@
 
 ---
 
-## 🎯 Task Overview
+## 📁 Repository Structure
+
+```
+gsoc2026-ml4sci-e2e/
+├── modified_Task1_Electron_Photon.ipynb        # Task 1: Electron vs Photon Classification
+├── Task2_sparse_neural_network.ipynb           # Task 2: Quark vs Gluon Classification
+└── README.md                                   # This file
+```
+
+---
+
+# 🎯 Task 1: Electron vs Photon Classification
+
+## Task Overview
 
 Binary classification of **electron** vs **photon** events from 32×32 calorimeter detector images, each with 2 channels:
 
@@ -98,22 +111,9 @@ unzip electron-vs-photons-ml4sci.zip
 ```
 
 ### 4. Run the notebook
-Open `Task1_Electron_Photon_Classification.ipynb` in Jupyter or Google Colab and run all cells.
+Open `modified_Task1_Electron_Photon.ipynb` in Jupyter or Google Colab and run all cells.
 
 > **Google Colab:** Recommended for GPU access (T4 or better).
-
----
-
-## 📂 Repository Structure
-
-```
-gsoc2026-ml4sci-e2e/
-├── Task1_Electron_Photon_Classification.ipynb   # Main notebook
-├── README.md                                    # This file
-└── results/
-    ├── task1_results.png                        # Loss, AUC, ROC curves
-    └── task1_confusion_matrix.png               # Confusion matrix
-```
 
 ---
 
@@ -127,18 +127,126 @@ gsoc2026-ml4sci-e2e/
 
 ---
 
-## 📈 Training Curves
+---
 
-![Results](results/task1_results.png)
-![Confusion Matrix](results/task1_confusion_matrix.png)
+# 🎯 Task 2: Quark vs Gluon Jet Classification
+
+## Task Description
+
+End-to-End deep learning pipeline to classify **quark-initiated** vs **gluon-initiated** jets using 125×125 multi-channel CMS detector images.
+
+**Input Channels:**
+
+| Channel | Description |
+|---------|-------------|
+| Channel 1 | ECAL (Electromagnetic Calorimeter) |
+| Channel 2 | HCAL (Hadronic Calorimeter) |
+| Channel 3 | Reconstructed Tracks |
+
+**Reference:** Andrews et al., *End-to-End Jet Classification of Quarks and Gluons with the CMS Open Data* ([arXiv:1902.08276](https://arxiv.org/abs/1902.08276))  
+**Goal:** Maximize AUC score on the test set using the ResNet-15 architecture from the paper.
+
+---
+
+## 🏗️ Model Architecture — ResNet-15
+
+```
+Input (3 × 125 × 125)
+    ↓
+Stem: Conv2d(3→64, 3×3) + BN + ReLU
+    ↓
+Layer 1: ResBlock(64→64) × 2
+    ↓
+Layer 2: ResBlock(64→128, stride=2) + ResBlock(128→128)
+    ↓
+Layer 3: ResBlock(128→256, stride=2) + ResBlock(256→256)
+    ↓
+Layer 4: ResBlock(256→512, stride=2) + ResBlock(512→512)
+    ↓
+Global Average Pooling → Dropout(0.3) → Linear(512→1)
+    ↓
+Output: Binary classification (Quark=1 / Gluon=0)
+```
+
+- **Total Parameters:** ~11 million
+- **Input channels:** 3 (ECAL + HCAL + Tracks)
+- **Output:** Binary (Quark / Gluon)
+
+---
+
+## 📊 Results
+
+| Metric | Andrews et al. Baseline | This Model |
+|--------|------------------------|------------|
+| **Test AUC** | 0.8076 | *see notebook output* |
+| **1/FPR @ TPR=70%** | 4.47 | *see notebook output* |
+
+---
+
+## 📁 Dataset
+
+**Source:** ML4SCI CERNBox — auto-downloaded in notebook.  
+If download fails, the notebook **automatically generates synthetic jet images** so training can still proceed.
+
+---
+
+## ⚙️ Training Configuration
+
+| Hyperparameter | Value |
+|---|---|
+| Optimizer | Adam |
+| Learning Rate | 5e-4 |
+| LR Schedule | StepLR (halved every 10 epochs) |
+| Weight Decay | 1e-4 |
+| Epochs | 30 |
+| Batch Size | 128 |
+| Loss Function | BCEWithLogitsLoss |
+| Gradient Clipping | max norm = 1.0 |
+
+---
+
+## 🔧 Data Preprocessing
+
+1. **log(1+x) transform** — compresses large dynamic range of energy deposits
+2. **Transpose** — converts (N, H, W, C) → PyTorch format (N, C, H, W)
+3. **Per-channel z-score normalization** — zero mean, unit variance per channel
+4. **80/10/10 stratified split** — train / validation / test
+
+---
+
+## 💡 Key Finding — Sparsity
+
+The CMS detector images are **~90%+ sparse (zero pixels)**. This directly motivates the GSoC 2026 proposal:
+
+- Dense CNN wastes ~90% of compute on empty pixels
+- Sparse convolutions skip zero pixels entirely
+- Expected speedup: **2–5× fewer FLOPs** with same AUC
+
+---
+
+## 🚀 How to Run (Task 2)
+
+> **Important:** Always run cells **top to bottom in order**.
+
+1. Open `Task2_sparse_neural_network.ipynb` in Google Colab
+2. Go to **Runtime → Change runtime type → T4 GPU**
+3. Click **Runtime → Run All**
+
+```bash
+pip install torch torchvision numpy h5py scikit-learn matplotlib seaborn
+```
+
+---
 
 ---
 
 ## 🔗 References
 
-- Andrews et al., "End-to-End Jet Classification" (2020) — [arXiv:1807.11916](https://arxiv.org/abs/1807.11916)
-- ML4SCI E2E Deep Learning Project — [ml4sci.org](https://ml4sci.org/)
+- Andrews et al. (2020) — [arXiv:1902.08276](https://arxiv.org/abs/1902.08276)
+- Andrews et al. (2020) — [arXiv:1807.11916](https://arxiv.org/abs/1807.11916)
 - He et al., "Deep Residual Learning" (2015) — [arXiv:1512.03385](https://arxiv.org/abs/1512.03385)
+- ML4SCI E2E Project — [https://ml4sci.org](https://ml4sci.org)
+- GSoC 2026 — ML4SCI Organization
 
 ---
 
