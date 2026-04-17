@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ml4sci-e2e"
+version = "0.1.0"
+description = "Dense baseline utilities for ML4SCI end-to-end particle-classification notebooks."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "Shaik Muzamil" }
+]
+dependencies = [
+  "h5py>=3.10",
+  "matplotlib>=3.8",
+  "nbclient>=0.10",
+  "nbformat>=5.10",
+  "numpy>=2.0",
+  "pandas>=2.2",
+  "scikit-learn>=1.5",
+  "seaborn>=0.13",
+  "torch>=2.2",
+  "torchvision>=0.17"
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

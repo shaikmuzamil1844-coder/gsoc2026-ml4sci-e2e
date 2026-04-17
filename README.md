@@ -1,48 +1,134 @@
-# GSoC 2026 - ML4SCI E2E
+# GSoC 2026 - ML4SCI End-to-End Baselines
 
-End-to-end deep learning notebooks for particle collision event classification, built around the ML4SCI GSoC 2026 application tasks.
+Dense deep-learning baselines for particle-physics event classification, prepared as a stronger starting point for a GSoC proposal around sparse neural networks.
 
-This repository contains two notebook-based pipelines:
+This repository focuses on two image-based tasks that align well with the ML4SCI end-to-end project direction:
 
-- `modified_Task1_Electron_Photon_Classification.ipynb`
-  Electron vs photon classification from `32x32x2` calorimeter images
-- `Task2_sparse_neural_network.ipynb`
-  Quark vs gluon jet classification from `125x125x3` CMS-style detector images
+- Task 1: electron vs photon classification from calorimeter images
+- Task 2: quark vs gluon jet classification from sparse detector images
 
-## Why This Repo Is Easier To Run Now
+The repo is intentionally positioned as a dense-baseline research scaffold:
 
-The notebooks were updated so they are more developer-friendly outside Google Colab:
+- notebooks for exploration and presentation
+- reusable Python modules for cleaner engineering
+- smoke tests and validation scripts for reproducibility
+- documentation that separates real benchmark claims from local fallback runs
 
-- no hardcoded Kaggle secret values
-- no required `!pip`, `!wget`, `!unzip`, or other Colab-only shell cells
-- safer dependency bootstrapping from standard Python
-- CPU-safe fallback execution paths for local validation
-- synthetic dataset fallback when external data is unavailable
-- reproducible local notebook runner in `tools/run_notebook.py`
+## Project Pitch
+
+Modern detector images are often extremely sparse. Dense CNNs still work well as baselines, but they waste substantial computation on zero-valued regions. That makes this repository a useful pre-sparse starting point:
+
+- it establishes dense ResNet-style baselines
+- it highlights where sparsity matters most
+- it makes the transition to sparse methods easier to justify experimentally
+
+For a GSoC mentor, this repo should read as:
+
+- a runnable baseline
+- a reproducible engineering artifact
+- a launchpad for dense-vs-sparse comparisons
+
+## What Improved In This Version
+
+Compared with the earlier notebook-only state, this repo now has:
+
+- portable notebooks that no longer depend on Colab-only shell magic
+- no hardcoded Kaggle secrets
+- synthetic fallback data paths for local execution validation
+- CPU-safe settings so `Run All` can complete on a normal machine
+- reusable code in `src/ml4sci_e2e`
+- a repository validation script in `scripts/validate_repo.py`
+- smoke tests in `tests/test_smoke.py`
+- clearer GSoC-facing documentation in `docs/results.md` and `docs/roadmap.md`
 
 ## Repository Layout
 
 ```text
 gsoc2026-ml4sci-e2e/
-|-- modified_Task1_Electron_Photon_Classification.ipynb
-|-- Task2_sparse_neural_network.ipynb
-|-- requirements.txt
+|-- docs/
+|   |-- results.md
+|   `-- roadmap.md
+|-- scripts/
+|   `-- validate_repo.py
+|-- src/
+|   `-- ml4sci_e2e/
+|       |-- data.py
+|       |-- metrics.py
+|       `-- models.py
+|-- tests/
+|   `-- test_smoke.py
 |-- tools/
 |   |-- patch_notebooks.py
 |   `-- run_notebook.py
+|-- modified_Task1_Electron_Photon_Classification.ipynb
+|-- Task2_sparse_neural_network.ipynb
+|-- pyproject.toml
+|-- requirements.txt
 `-- README.md
 ```
 
-## Quick Start
+## Tasks
 
-### 1. Clone the repository
+### Task 1: Electron vs Photon
+
+Problem:
+
+- binary classification from `32 x 32 x 2` calorimeter images
+- channels represent hit energy and hit time
+
+Model:
+
+- lightweight ResNet-15 style architecture
+- residual blocks for stable training on small images
+- global average pooling and dropout before the binary head
+
+Primary dataset:
+
+- Kaggle: Electron vs Photons (ML4SCI)
+
+Reference result already reported in the original notebook work:
+
+- test AUC: `0.7178`
+
+### Task 2: Quark vs Gluon
+
+Problem:
+
+- binary classification from `125 x 125 x 3` detector images
+- channels represent ECAL, HCAL, and reconstructed tracks
+
+Model:
+
+- deeper ResNet-15 style architecture
+- designed as a dense baseline for future sparse experiments
+
+Primary dataset:
+
+- ML4SCI CERNBox source referenced in the notebook
+
+Paper baseline used as the target reference:
+
+- AUC: `0.8076`
+- `1/FPR @ TPR=70%`: `4.47`
+
+### Why Task 2 Is Especially Relevant
+
+Task 2 exposes the core motivation for a sparse-ML GSoC proposal:
+
+- detector images are overwhelmingly sparse
+- dense convolutions waste FLOPs on inactive pixels
+- sparse operators could preserve accuracy while improving efficiency
+
+## Installation
+
+### 1. Clone
 
 ```bash
 git clone https://github.com/shaikmuzamil1844-coder/gsoc2026-ml4sci-e2e.git
 cd gsoc2026-ml4sci-e2e
 ```
 
-### 2. Create a virtual environment
+### 2. Create and activate an environment
 
 Windows PowerShell:
 
@@ -63,109 +149,85 @@ source .venv/bin/activate
 ```bash
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
+python -m pip install -e .
 ```
 
-### 4. Run the notebooks
+## How To Run
 
-In Jupyter:
-
-```bash
-jupyter notebook
-```
-
-Or execute a notebook programmatically:
+### Notebook execution
 
 ```bash
 python tools/run_notebook.py modified_Task1_Electron_Photon_Classification.ipynb
 python tools/run_notebook.py Task2_sparse_neural_network.ipynb
 ```
 
-## Task 1: Electron vs Photon Classification
+### Repository validation
 
-### Objective
+This is the fastest way to show that the repo is wired correctly:
 
-Classify electron and photon events using `32x32` calorimeter images with two channels:
+```bash
+python scripts/validate_repo.py
+python -m unittest tests.test_smoke
+```
 
-- channel 1: hit energy
-- channel 2: hit time
+## Real Results vs Fallback Runs
 
-### Model
+This distinction matters for credibility.
 
-A lightweight ResNet-style binary classifier:
+### Real benchmark runs
 
-- input: `2 x 32 x 32`
-- residual backbone with progressive channel expansion
-- global average pooling
-- dropout
-- final linear classification head
+Use these for:
 
-### Dataset
+- proposal claims
+- mentor discussions
+- scientific comparison
 
-Primary source:
-[Kaggle - Electron vs Photons (ML4SCI)](https://www.kaggle.com/datasets/vishakkbhat/electron-vs-photons-ml4sci)
+Characteristics:
 
-Expected files:
+- real datasets
+- preferably GPU-backed training
+- meaningful reported performance
 
-- `SingleElectronPt50_IMGCROPS_n249k_RHv1.hdf5`
-- `SinglePhotonPt50_IMGCROPS_n249k_RHv1.hdf5`
+### Fallback validation runs
 
-If Kaggle credentials are not available locally, the notebook can generate a small synthetic fallback dataset so the notebook still runs end-to-end for validation.
+Use these for:
 
-### Reference Result
+- local reproducibility
+- notebook portability
+- CI-style smoke checks
 
-From the original project version:
+Characteristics:
 
-- test AUC: `0.7178`
-- model: ResNet-15 style architecture
-- optimizer: Adam
-- scheduler: CosineAnnealingLR
+- synthetic fallback data when external data is unavailable
+- reduced CPU-safe settings
+- useful for execution validation, not final scientific claims
 
-## Task 2: Quark vs Gluon Jet Classification
+Read more in [docs/results.md](docs/results.md).
 
-### Objective
+## Why This Repo Is More Mentor-Friendly Now
 
-Classify quark-initiated vs gluon-initiated jets using multi-channel jet images:
+Mentors usually want three signals:
 
-- ECAL
-- HCAL
-- reconstructed tracks
+1. You can frame the research problem clearly.
+2. You can engineer a clean starting point.
+3. You understand the difference between a demo and a benchmark.
 
-### Model
+This repo now addresses all three more directly:
 
-ResNet-15 style architecture inspired by the CMS open data end-to-end jet classification setup.
+- the notebooks are easier to run
+- the code is no longer trapped entirely inside notebooks
+- the docs explain what is baseline engineering vs what still needs real experimentation
 
-### Dataset
+## Suggested Next GSoC Step
 
-Primary source:
-ML4SCI CERNBox download referenced in the notebook.
+The strongest follow-up would be to build the sparse-method comparison on top of this baseline:
 
-Behavior now:
+1. profile dense training and inference
+2. introduce sparse layers or sparse representations
+3. compare accuracy, memory, throughput, and compute
+4. document where sparse methods win and where they do not
 
-- tries to use the real dataset when available
-- validates the downloaded `.npz` file before use
-- falls back to synthetic sparse jet images if download is unavailable
-
-### Key Observation
-
-These detector images are highly sparse, which is exactly why sparse neural network methods are compelling for this problem:
-
-- dense convolutions waste compute on zero-valued pixels
-- sparse methods can reduce unnecessary FLOPs
-- this repository acts as a strong dense baseline for future sparse experiments
-
-## Reproducibility Notes
-
-- on GPU, notebooks keep the larger training configuration
-- on CPU, notebooks automatically use smaller execution settings so `Run All` completes in a normal local environment
-- fallback CPU runs are intended for execution validation, not final benchmark reporting
-
-## Developer Notes
-
-If you want to keep iterating on notebook usability:
-
-- use `tools/patch_notebooks.py` to reapply the notebook source fixes
-- use `tools/run_notebook.py` for local notebook execution without depending on Jupyter UI behavior
-- avoid committing datasets, model checkpoints, and virtual environments
+That roadmap is summarized in [docs/roadmap.md](docs/roadmap.md).
 
 ## References
 
