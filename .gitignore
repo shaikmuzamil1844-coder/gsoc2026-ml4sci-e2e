@@ -1,0 +1,20 @@
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+
+# Local datasets
+*.h5
+*.hdf5
+*.npz
+*.zip
+
+# Training artifacts
+*.pth
+*.pt
+
+# Generated plots
+*.png
+
+# OS/editor files
+.DS_Store
+Thumbs.db
