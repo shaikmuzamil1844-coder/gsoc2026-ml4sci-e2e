@@ -62,7 +62,7 @@ gsoc2026-ml4sci-e2e/
 |   `-- run_notebook.py
 |-- modified_Task1_Electron_Photon_Classification.ipynb
 |-- Task2_sparse_neural_network.ipynb
-|-- pyproject.toml
+|-- setup.py
 |-- requirements.txt
 `-- README.md
 ```
@@ -149,7 +149,7 @@ source .venv/bin/activate
 ```bash
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
-python -m pip install -e .
+python -m pip install --no-build-isolation .
 ```
 
 ## How To Run
